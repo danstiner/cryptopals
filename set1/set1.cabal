@@ -36,6 +36,7 @@ test-suite set1-test
   main-is:             Spec.hs
   build-depends:       base
                      , set1
+                     , HUnit
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
