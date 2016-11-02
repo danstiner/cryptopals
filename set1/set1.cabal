@@ -20,6 +20,7 @@ library
                      , base16-bytestring
                      , base64-bytestring
                      , bytestring
+                     , either-unwrap
   default-language:    Haskell2010
 
 executable set1-exe
