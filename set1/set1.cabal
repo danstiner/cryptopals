@@ -22,6 +22,8 @@ library
                      , bytestring
                      , containers
                      , either-unwrap
+                     , HUnit
+                     , HUnit-approx
   default-language:    Haskell2010
 
 executable set1-exe
