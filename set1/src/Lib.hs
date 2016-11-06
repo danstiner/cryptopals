@@ -16,6 +16,7 @@ import Data.String
 import Data.Either.Unwrap
 import qualified Data.Bits as Bits
 import qualified Data.Map.Strict as Map
+import Data.Map.Strict (Map)
 
 type HexString = String
 type Base64String = String
@@ -60,6 +61,10 @@ test_englishLetterFrequencies_total_probability = TestCase $ assertApproxEqual
   1
   (Map.foldr (+) 0 englishLetterFrequencies)
 
+measureDistance :: (Ord k, Num b) => (a -> a -> b) -> Map k a -> Map k a -> b
+measureDistance metric expected actual = sumMap $ Map.intersectionWith metric expected actual
+  where
+    sumMap = Map.foldr (+) 0
 
 xor :: B.ByteString -> B.ByteString -> B.ByteString
 xor a b = B.pack (B.zipWith Bits.xor a b)
