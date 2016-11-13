@@ -153,9 +153,12 @@ test_set1_challenge2 = expected ~=? actual
     actual = xor <$> hexStringToBytes "1c0111001f010100061a024b53535009181c" <*> hexStringToBytes "686974207468652062756c6c277320657965"
     expected = hexStringToBytes "746865206b696420646f6e277420706c6179"
 
-test_set1_challenge3 = "Cooking MC's like a pound of bacon" ~=? fst bestDistance
+test_set1_challenge3 = "Cooking MC's like a pound of bacon" ~=? decodeHexXored "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
+
+decodeHexXored :: String -> String
+decodeHexXored string = fst bestDistance
   where
-    input = hexStringToBytes' "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
+    input = hexStringToBytes' string
     bestDistance :: (String, Float)
     bestDistance = List.maximumBy (compare `on` snd) distances
     distances :: [(String, Float)]
