@@ -133,6 +133,12 @@ hexStringToBytes = base16DecodeCompletely . fromString
 hexStringToBytes' :: HexString -> B.ByteString
 hexStringToBytes' = fromRight . hexStringToBytes
 
+hexStringToString :: HexString -> Either String String
+hexStringToString input = C.unpack <$> hexStringToBytes input
+
+hexStringToString' :: HexString -> String
+hexStringToString' = fromRight . hexStringToString
+
 bytesToBase64String :: B.ByteString -> Base64String
 bytesToBase64String = C.unpack . Base64.encode
 
