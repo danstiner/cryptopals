@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Lib
     ( someFunc
     , hexStringToBase64String
@@ -7,6 +9,7 @@ module Lib
     , tests
     ) where
 
+import Data.FileEmbed
 import Data.Char
 import qualified Data.Either as Either
 import qualified Data.List as List
@@ -24,6 +27,8 @@ import Data.Map.Strict (Map)
 import Data.Ratio
 import Control.Arrow
 import Data.Function
+import Data.Maybe
+import System.IO.Unsafe
 
 type HexString = String
 type Base64String = String
@@ -87,8 +92,52 @@ englishLetterFrequencies = Map.fromList
   , ('x', 0.150 / 100)
   , ('y', 1.974 / 100)
   , ('z', 0.074 / 100)
+  , (' ', 20 / 100)
+  , ('!', 0)
+  , ('"', 0)
+  , ('#', 0)
+  , ('$', 0)
+  , ('%', 0)
+  , ('&', 0)
   , ('\'', 0)
-  , (' ', 0)
+  , ('(', 0)
+  , (')', 0)
+  , ('*', 0)
+  , ('+', 0)
+  , (',', 0)
+  , ('-', 0)
+  , ('.', 0)
+  , ('/', 0)
+  , ('0', 0)
+  , ('1', 0)
+  , ('2', 0)
+  , ('3', 0)
+  , ('4', 0)
+  , ('5', 0)
+  , ('6', 0)
+  , ('7', 0)
+  , ('8', 0)
+  , ('9', 0)
+  , (':', 0)
+  , (';', 0)
+  , ('<', 0)
+  , ('=', 0)
+  , ('>', 0)
+  , ('?', 0)
+  , ('@', 0)
+  , ('[', 0)
+  , ('\\', 0)
+  , (']', 0)
+  , ('^', 0)
+  , ('_', 0)
+  , ('`', 0)
+  , ('{', 0)
+  , ('|', 0)
+  , ('}', 0)
+  , ('~', 0)
+  , ('\n', 0)
+  , ('\t', 0)
+  , ('\r', 0)
   ]
 
 measureDistance :: (Ord k, Num b) => (a -> a -> b) -> a -> Map k a -> Map k a -> Either [k] b
@@ -159,21 +208,38 @@ test_set1_challenge2 = expected ~=? actual
     actual = xor <$> hexStringToBytes "1c0111001f010100061a024b53535009181c" <*> hexStringToBytes "686974207468652062756c6c277320657965"
     expected = hexStringToBytes "746865206b696420646f6e277420706c6179"
 
-test_set1_challenge3 = "Cooking MC's like a pound of bacon" ~=? decodeHexXored "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
+test_set1_challenge3 = "Cooking MC's like a pound of bacon" ~=? decodeHexXored' "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
 
-decodeHexXored :: String -> String
-decodeHexXored string = fst bestDistance
+
+decodeHexXored' :: String -> String
+decodeHexXored' = fromJust . decodeHexXored
+  where
+    fromJust (Just x) = x
+
+decodeHexXored :: String -> Maybe String
+decodeHexXored string = fst <$> decodeHexXored'' string
+
+decodeHexXored'' :: String -> Maybe (String, Float)
+decodeHexXored'' string = bestDistance
   where
     input = hexStringToBytes' string
-    bestDistance :: (String, Float)
-    bestDistance = List.maximumBy (compare `on` snd) distances
+    bestDistance :: Maybe (String, Float)
+    bestDistance = if null distances then Nothing else Just (List.minimumBy (compare `on` snd) distances)
     distances :: [(String, Float)]
     distances = Either.rights $ map (\string -> (\distance -> (string, distance)) <$> frequencyDistance string) xorPossibilityStrings
     xorPossibilityStrings = map C.unpack xorPossibilities
-    xorPossibilities = map (xor input . C.replicate (B.length input)) ['0'..'z']
+    xorPossibilities = map (xor input . B.replicate (B.length input)) [0..255]
+
+test_set1_challenge4 = "Now that the party is jumping\n" ~=? fst (List.minimumBy (compare `on` snd) decodedLines)
+  where
+    decodedLines :: [(String, Float)]
+    decodedLines = mapMaybe decodeHexXored'' fileLines
+    fileLines = lines fileString
+    fileString = $(embedStringFile "data/4.txt")
 
 tests = TestLabel "Lib" $ TestList
   [ test_set1_challenge1
   , test_set1_challenge2
   , test_set1_challenge3
+  , test_set1_challenge4
   ]

@@ -22,6 +22,7 @@ library
                      , bytestring
                      , containers
                      , either-unwrap
+                     , file-embed
                      , HUnit
                      , HUnit-approx
   default-language:    Haskell2010
