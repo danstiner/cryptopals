@@ -19,6 +19,7 @@ import qualified Data.ByteString.Base16 as Base16
 import qualified Data.ByteString.Base64 as Base64
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
+import Data.ByteString (ByteString)
 import Data.String
 import Data.Either.Unwrap
 import qualified Data.Bits as Bits
@@ -182,6 +183,8 @@ hexStringToBytes = base16DecodeCompletely . fromString
 hexStringToBytes' :: HexString -> B.ByteString
 hexStringToBytes' = fromRight . hexStringToBytes
 
+decodeHex = hexStringToBytes'
+
 hexStringToString :: HexString -> Either String String
 hexStringToString input = C.unpack <$> hexStringToBytes input
 
@@ -197,18 +200,6 @@ base16DecodeCompletely = toMaybe . Base16.decode
     toMaybe (result, leftovers)
       | B.null leftovers = Right result
       | otherwise = Left ("Non-base16 input starting at byte " ++ show (B.length result))
-
-test_set1_challenge1 = expected ~=? actual
-  where
-    expected = Right "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
-    actual = hexStringToBase64String "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
-
-test_set1_challenge2 = expected ~=? actual
-  where
-    actual = xor <$> hexStringToBytes "1c0111001f010100061a024b53535009181c" <*> hexStringToBytes "686974207468652062756c6c277320657965"
-    expected = hexStringToBytes "746865206b696420646f6e277420706c6179"
-
-test_set1_challenge3 = "Cooking MC's like a pound of bacon" ~=? decodeHexXored' "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
 
 
 decodeHexXored' :: String -> String
@@ -230,6 +221,28 @@ decodeHexXored'' string = bestDistance
     xorPossibilityStrings = map C.unpack xorPossibilities
     xorPossibilities = map (xor input . B.replicate (B.length input)) [0..255]
 
+encryptWithRepeatingKeyXOR :: ByteString -> ByteString -> ByteString
+encryptWithRepeatingKeyXOR key = B.concat . map (`xor` key) . chunks (B.length key)
+
+chunks :: Int -> ByteString -> [ByteString]
+chunks size = loop 0
+  where
+    loop offset bs
+      | B.null bs = []
+      | otherwise = B.take size bs : loop (offset + size) (B.drop size bs)
+
+test_set1_challenge1 = expected ~=? actual
+  where
+    expected = Right "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
+    actual = hexStringToBase64String "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
+
+test_set1_challenge2 = expected ~=? actual
+  where
+    actual = xor <$> hexStringToBytes "1c0111001f010100061a024b53535009181c" <*> hexStringToBytes "686974207468652062756c6c277320657965"
+    expected = hexStringToBytes "746865206b696420646f6e277420706c6179"
+
+test_set1_challenge3 = "Cooking MC's like a pound of bacon" ~=? decodeHexXored' "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
+
 test_set1_challenge4 = "Now that the party is jumping\n" ~=? fst (List.minimumBy (compare `on` snd) decodedLines)
   where
     decodedLines :: [(String, Float)]
@@ -237,9 +250,20 @@ test_set1_challenge4 = "Now that the party is jumping\n" ~=? fst (List.minimumBy
     fileLines = lines fileString
     fileString = $(embedStringFile "data/4.txt")
 
+test_set1_challenge5 = expected_ciphertext ~=? encryptWithRepeatingKeyXOR key plaintext
+  where
+    plaintext = C.pack . List.intercalate "\n" $
+      [ "Burning 'em, if you ain't quick and nimble"
+      , "I go crazy when I hear a cymbal"]
+    key = C.pack "ICE"
+    expected_ciphertext = decodeHex $
+       "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272" ++ 
+       "a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
+
 tests = TestLabel "Lib" $ TestList
   [ test_set1_challenge1
   , test_set1_challenge2
   , test_set1_challenge3
   , test_set1_challenge4
+  , test_set1_challenge5
   ]
