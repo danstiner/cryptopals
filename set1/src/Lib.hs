@@ -154,6 +154,9 @@ measureDistance metric zero expected actual = sum <$> resultOrError merged
     merged = Map.mergeWithKey distance (Map.map (Just . metric zero)) (Map.map (const Nothing)) expected actual
     distance _ x1 x2 = Just (Just (metric x1 x2))
 
+intersectionDistance :: (Ord k, Num b) => (a -> a -> b) -> Map k a -> Map k a -> Map k b
+intersectionDistance = Map.intersectionWith
+
 frequencies :: String -> Map Char Frequency
 frequencies input = Map.map overTotal characterCounts
   where
