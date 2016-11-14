@@ -169,8 +169,8 @@ frequencyDistance input = measureDistance metric 0.0 ideal actual
   where
     metric x1 x2 = (x1 - x2) * (x1 - x2)
     ideal = englishLetterFrequencies
-    actual = Map.map frequencyToFractional (frequencies input)
-    frequencyToFractional = fromRational . toRational
+    actual = Map.map fromFrequency (frequencies input)
+    fromFrequency = fromRational . toRational
 
 xor :: B.ByteString -> B.ByteString -> B.ByteString
 xor a b = B.pack (B.zipWith Bits.xor a b)
