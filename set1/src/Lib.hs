@@ -176,12 +176,6 @@ hexStringToBytes' = fromRight . hexStringToBytes
 
 decodeHex = hexStringToBytes'
 
-hexStringToString :: HexString -> Either String String
-hexStringToString input = C.unpack <$> hexStringToBytes input
-
-hexStringToString' :: HexString -> String
-hexStringToString' = fromRight . hexStringToString
-
 base16DecodeCompletely :: B.ByteString -> Either String B.ByteString
 base16DecodeCompletely = toMaybe . Base16.decode
   where
