@@ -181,7 +181,7 @@ base16DecodeCompletely = toMaybe . Base16.decode
   where
     toMaybe (result, leftovers)
       | B.null leftovers = Right result
-      | otherwise = Left ("Non-base16 input starting at byte " ++ show (B.length result))
+      | otherwise = Left ("Non-base16 input starting at byte " ++ show (B.length result * 2))
 
 
 decodeHexXored' :: String -> String
