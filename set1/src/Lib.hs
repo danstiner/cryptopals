@@ -162,7 +162,6 @@ frequencies input = Map.map overTotal characterCounts
     characterCounts = Map.fromListWith (+) (map (\c -> (c, 1)) input)
     totalCharacters = length input
 
--- convert from hex to characters, compute frequencies accounting for non-present characters, compute distance from average frequency squared
 frequencyDistance :: String -> Either String Float
 frequencyDistance input = measureDistance metric 0.0 ideal actual
   where
