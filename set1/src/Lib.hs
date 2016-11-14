@@ -158,10 +158,11 @@ intersectionDistance :: (Ord k, Num b) => (a -> a -> b) -> Map k a -> Map k a ->
 intersectionDistance = Map.intersectionWith
 
 frequencies :: String -> Map Char Frequency
-frequencies input = Map.map (% totalCharacters) characterCounts
+frequencies input = Map.map (% totalCharacters) characterCountMap
   where
     totalCharacters = length input
-    characterCounts = Map.fromListWith (+) (map (\c -> (c, 1)) input)
+    characterCountMap = Map.fromListWith (+) characterSingletons
+    characterSingletons = map (\c -> (c, 1)) input
 
 frequencyDistance :: String -> Either String Float
 frequencyDistance input = measureDistance metric 0.0 ideal actual
