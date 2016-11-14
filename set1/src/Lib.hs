@@ -220,7 +220,8 @@ decodeHexXored'' string = bestDistance
     distances :: [(String, Float)]
     distances = Either.rights $ map (\string -> (\distance -> (string, distance)) <$> frequencyDistance string) xorPossibilityStrings
     xorPossibilityStrings = map C.unpack xorPossibilities
-    xorPossibilities = map (xor input . B.replicate (B.length input)) [0..255]
+    xorPossibilities = map (xor input) keys
+    keys = map (B.replicate (B.length input)) [0..255]
 
 encryptWithRepeatingKeyXOR :: ByteString -> ByteString -> ByteString
 encryptWithRepeatingKeyXOR key = B.concat . map (`xor` key) . chunks (B.length key)
