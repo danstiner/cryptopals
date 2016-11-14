@@ -246,9 +246,8 @@ test_set1_challenge3 = "Cooking MC's like a pound of bacon" ~=? decodeHexXored' 
 test_set1_challenge4 = "Now that the party is jumping\n" ~=? fst (List.minimumBy (compare `on` snd) decodedLines)
   where
     decodedLines :: [(String, Float)]
-    decodedLines = mapMaybe decodeHexXored'' fileLines
-    fileLines = lines fileString
-    fileString = $(embedStringFile "data/4.txt")
+    decodedLines = mapMaybe decodeHexXored'' testLines
+    testLines = lines $(embedStringFile "data/4.txt")
 
 test_set1_challenge5 = expected_ciphertext ~=? encryptWithRepeatingKeyXOR key plaintext
   where
