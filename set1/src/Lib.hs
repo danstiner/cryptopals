@@ -1,11 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Lib
-    ( someFunc
-    , hexStringToBase64String
-    , hexStringToBytes
-    , hexStringToBytes'
-    , xor
+    ( decodeHex
     , tests
     ) where
 
@@ -34,9 +30,6 @@ import System.IO.Unsafe
 type HexString = String
 type Base64String = String
 type Frequency = Ratio Int
-
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
 
 -- from http://en.algoritmy.net/article/40379/Letter-frequency-English
 englishLetterFrequencies :: Map.Map Char Float
@@ -175,9 +168,6 @@ frequencyDistance input = measureDistance metric 0.0 ideal actual
 xor :: B.ByteString -> B.ByteString -> B.ByteString
 xor a b = B.pack (B.zipWith Bits.xor a b)
 
-hexStringToBase64String :: HexString -> Either String Base64String
-hexStringToBase64String input = bytesToBase64String <$> hexStringToBytes input
-
 hexStringToBytes :: HexString -> Either String B.ByteString
 hexStringToBytes = base16DecodeCompletely . fromString
 
@@ -191,9 +181,6 @@ hexStringToString input = C.unpack <$> hexStringToBytes input
 
 hexStringToString' :: HexString -> String
 hexStringToString' = fromRight . hexStringToString
-
-bytesToBase64String :: B.ByteString -> Base64String
-bytesToBase64String = C.unpack . Base64.encode
 
 base16DecodeCompletely :: B.ByteString -> Either String B.ByteString
 base16DecodeCompletely = toMaybe . Base16.decode
@@ -234,8 +221,8 @@ chunks size = loop 0
 
 test_set1_challenge1 = expected ~=? actual
   where
-    expected = Right "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
-    actual = hexStringToBase64String "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
+    expected = C.pack "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
+    actual = Base64.encode $ decodeHex "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
 
 test_set1_challenge2 = expected ~=? actual
   where
