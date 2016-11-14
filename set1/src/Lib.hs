@@ -226,8 +226,8 @@ test_set1_challenge1 = expected ~=? actual
 
 test_set1_challenge2 = expected ~=? actual
   where
-    actual = xor <$> hexStringToBytes "1c0111001f010100061a024b53535009181c" <*> hexStringToBytes "686974207468652062756c6c277320657965"
-    expected = hexStringToBytes "746865206b696420646f6e277420706c6179"
+    expected = decodeHex "746865206b696420646f6e277420706c6179"
+    actual = decodeHex "1c0111001f010100061a024b53535009181c" `xor` decodeHex "686974207468652062756c6c277320657965"
 
 test_set1_challenge3 = "Cooking MC's like a pound of bacon" ~=? decodeHexXored' "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
 
