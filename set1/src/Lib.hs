@@ -6,7 +6,6 @@ module Lib
     ) where
 
 import Data.FileEmbed
-import Data.Char
 import qualified Data.Either as Either
 import qualified Data.List as List
 import Test.HUnit
@@ -26,10 +25,15 @@ import Control.Arrow
 import Data.Function
 import Data.Maybe
 import System.IO.Unsafe
+import Data.Char as Char
 
 type HexString = String
 type Base64String = String
 type Frequency = Ratio Int
+type CipherText = ByteString
+type PlainText = ByteString
+type Key = ByteString
+type Likelihood = Float
 
 -- from http://en.algoritmy.net/article/40379/Letter-frequency-English
 englishLetterFrequencies :: Map.Map Char Float
@@ -183,7 +187,6 @@ base16DecodeCompletely = toMaybe . Base16.decode
       | B.null leftovers = Right result
       | otherwise = Left ("Non-base16 input starting at byte " ++ show (B.length result * 2))
 
-
 decodeHexXored' :: String -> String
 decodeHexXored' = fromJust . decodeHexXored
   where
@@ -203,8 +206,23 @@ decodeHexXored'' string = bestDistance
     xorPossibilityStrings = map (\key -> C.unpack (encryptWithRepeatingKeyXOR key input)) keys
     keys = map B.singleton [0..255]
 
-encryptWithRepeatingKeyXOR :: ByteString -> ByteString -> ByteString
+bruteForceEnglishEncryptedWithSingleByteXOR :: CipherText -> [(PlainText, Likelihood)]
+bruteForceEnglishEncryptedWithSingleByteXOR cipertext =
+    map likelihood . filter isPrintable . map (decrypt cipertext) $ keys
+  where
+    keys :: [Key]
+    keys = map B.singleton [0..255]
+    likelihood :: PlainText -> (PlainText, Likelihood)
+    likelihood _ = undefined
+    isPrintable :: ByteString -> Bool
+    isPrintable = C.all Char.isPrint
+    decrypt cipertext key = decryptWithRepeatingKeyXOR key cipertext
+
+encryptWithRepeatingKeyXOR :: Key -> PlainText -> CipherText
 encryptWithRepeatingKeyXOR key = B.concat . map (`xor` key) . chunks (B.length key)
+
+decryptWithRepeatingKeyXOR :: Key -> CipherText -> PlainText
+decryptWithRepeatingKeyXOR = encryptWithRepeatingKeyXOR
 
 chunks :: Int -> ByteString -> [ByteString]
 chunks size = loop 0
