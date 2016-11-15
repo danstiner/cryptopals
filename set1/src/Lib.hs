@@ -216,7 +216,7 @@ bruteForceEnglishEncryptedWithSingleByteXOR cipertext =
     likelihood _ = undefined
     isPrintable :: ByteString -> Bool
     isPrintable = C.all Char.isPrint
-    decrypt cipertext key = decryptWithRepeatingKeyXOR key cipertext
+    decrypt = flip decryptWithRepeatingKeyXOR
 
 encryptWithRepeatingKeyXOR :: Key -> PlainText -> CipherText
 encryptWithRepeatingKeyXOR key = B.concat . map (`xor` key) . chunks (B.length key)
