@@ -91,68 +91,14 @@ englishLetterFrequencies = Map.fromList
   , ('y', 1.974 / 100)
   , ('z', 0.074 / 100)
   , (' ', 20 / 100)
-  , ('!', 0)
-  , ('"', 0)
-  , ('#', 0)
-  , ('$', 0)
-  , ('%', 0)
-  , ('&', 0)
-  , ('\'', 0)
-  , ('(', 0)
-  , (')', 0)
-  , ('*', 0)
-  , ('+', 0)
-  , (',', 0)
-  , ('-', 0)
-  , ('.', 0)
-  , ('/', 0)
-  , ('0', 0)
-  , ('1', 0)
-  , ('2', 0)
-  , ('3', 0)
-  , ('4', 0)
-  , ('5', 0)
-  , ('6', 0)
-  , ('7', 0)
-  , ('8', 0)
-  , ('9', 0)
-  , (':', 0)
-  , (';', 0)
-  , ('<', 0)
-  , ('=', 0)
-  , ('>', 0)
-  , ('?', 0)
-  , ('@', 0)
-  , ('[', 0)
-  , ('\\', 0)
-  , (']', 0)
-  , ('^', 0)
-  , ('_', 0)
-  , ('`', 0)
-  , ('{', 0)
-  , ('|', 0)
-  , ('}', 0)
-  , ('~', 0)
-  , ('\n', 0)
-  , ('\t', 0)
-  , ('\r', 0)
   ]
 
-measureDistance :: (Ord k, Num b) => (a -> a -> b) -> a -> Map k a -> Map k a -> Either [k] b
-measureDistance metric zero expected actual = sum <$> resultOrError merged
+distanceFromExpected :: (Ord k, Num b) => (a -> a -> b) -> a -> Map k a -> Map k a -> Map k b
+distanceFromExpected metric zero = Map.mergeWithKey combine expectedButNotPresent unexpected
   where
-    resultOrError :: Map k (Maybe a) -> Either [k] [a]
-    resultOrError = resultOrError' . Either.partitionEithers . map maybeToEither . Map.toList
-    resultOrError' :: ([a], [b]) -> Either [a] [b]
-    resultOrError' ([], bs) = Right bs
-    resultOrError' (as, _) = Left as
-    maybeToEither (k, Nothing) = Left k
-    maybeToEither (k, Just x) = Right x
-    merged = Map.mergeWithKey distance (Map.map (Just . metric zero)) (Map.map (const Nothing)) expected actual
-    distance _ x1 x2 = Just (Just (metric x1 x2))
-
-intersectionDistance :: (Ord k, Num b) => (a -> a -> b) -> Map k a -> Map k a -> Map k b
-intersectionDistance = Map.intersectionWith
+    combine _ x1 x2 = Just $ metric x1 x2
+    expectedButNotPresent = Map.map (metric zero)
+    unexpected = const Map.empty
 
 frequencies :: String -> Map Char Frequency
 frequencies input = Map.map (% totalCharacters) characterCountMap
@@ -160,14 +106,6 @@ frequencies input = Map.map (% totalCharacters) characterCountMap
     totalCharacters = length input
     characterCountMap = Map.fromListWith (+) characterSingletons
     characterSingletons = map (\c -> (c, 1)) input
-
-frequencyDistance :: String -> Either String Float
-frequencyDistance input = measureDistance metric 0.0 ideal actual
-  where
-    metric x1 x2 = (x1 - x2) * (x1 - x2)
-    ideal = englishLetterFrequencies
-    actual = Map.map fromFrequency (frequencies input)
-    fromFrequency = fromRational . toRational
 
 xor :: B.ByteString -> B.ByteString -> B.ByteString
 xor a b = B.pack (B.zipWith Bits.xor a b)
@@ -187,25 +125,6 @@ base16DecodeCompletely = toMaybe . Base16.decode
       | B.null leftovers = Right result
       | otherwise = Left ("Non-base16 input starting at byte " ++ show (B.length result * 2))
 
-decodeHexXored' :: String -> String
-decodeHexXored' = fromJust . decodeHexXored
-  where
-    fromJust (Just x) = x
-
-decodeHexXored :: String -> Maybe String
-decodeHexXored string = fst <$> decodeHexXored'' string
-
-decodeHexXored'' :: String -> Maybe (String, Float)
-decodeHexXored'' string = bestDistance
-  where
-    input = hexStringToBytes' string
-    bestDistance :: Maybe (String, Float)
-    bestDistance = if null distances then Nothing else Just (List.minimumBy (compare `on` snd) distances)
-    distances :: [(String, Float)]
-    distances = Either.rights $ map (\string -> (\distance -> (string, distance)) <$> frequencyDistance string) xorPossibilityStrings
-    xorPossibilityStrings = map (\key -> C.unpack (encryptWithRepeatingKeyXOR key input)) keys
-    keys = map B.singleton [0..255]
-
 bruteForceEnglishEncryptedWithSingleByteXOR :: CipherText -> [(PlainText, Score)]
 bruteForceEnglishEncryptedWithSingleByteXOR cipertext =
     map score . filter isPrintable . map (decrypt cipertext) $ keys
@@ -213,9 +132,15 @@ bruteForceEnglishEncryptedWithSingleByteXOR cipertext =
     keys :: [Key]
     keys = map B.singleton [0..255]
     score :: PlainText -> (PlainText, Score)
-    score _ = undefined
+    score text = (text, score' text)
+    score' text = distance englishLetterFrequencies (Map.map fromFrequency (frequencies (C.unpack text)))
+    distance expected actual = sumMap $ distanceFromExpected metric zero expected actual
+    sumMap = Map.foldl' (+) 0
+    metric x1 x2 = abs (x1 - x2)
+    zero = 0.0
+    fromFrequency = fromRational . toRational
     isPrintable :: ByteString -> Bool
-    isPrintable = C.all Char.isPrint
+    isPrintable = C.all ((||) <$> Char.isPrint <*> Char.isSpace)
     decrypt = flip decryptWithRepeatingKeyXOR
 
 encryptWithRepeatingKeyXOR :: Key -> PlainText -> CipherText
@@ -241,12 +166,13 @@ test_set1_challenge2 = expected ~=? actual
     expected = decodeHex "746865206b696420646f6e277420706c6179"
     actual = decodeHex "1c0111001f010100061a024b53535009181c" `xor` decodeHex "686974207468652062756c6c277320657965"
 
-test_set1_challenge3 = "Cooking MC's like a pound of bacon" ~=? decodeHexXored' "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
+test_set1_challenge3 =
+  C.pack "Cooking MC's like a pound of bacon" ~=? fst (List.minimumBy (compare `on` snd) $ bruteForceEnglishEncryptedWithSingleByteXOR (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"))
 
-test_set1_challenge4 = "Now that the party is jumping\n" ~=? fst (List.minimumBy (compare `on` snd) decodedLines)
+test_set1_challenge4 = C.pack "Now that the party is jumping\n" ~=? fst (List.minimumBy (compare `on` snd) decodedLines)
   where
-    decodedLines :: [(String, Float)]
-    decodedLines = mapMaybe decodeHexXored'' testLines
+    decodedLines :: [(PlainText, Score)]
+    decodedLines = concatMap (bruteForceEnglishEncryptedWithSingleByteXOR . decodeHex) testLines
     testLines = lines $(embedStringFile "data/4.txt")
 
 test_set1_challenge5 = expected_ciphertext ~=? encryptWithRepeatingKeyXOR key plaintext
