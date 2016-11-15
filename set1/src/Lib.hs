@@ -33,7 +33,7 @@ type Frequency = Ratio Int
 type CipherText = ByteString
 type PlainText = ByteString
 type Key = ByteString
-type Likelihood = Float
+type Score = Float
 
 -- from http://en.algoritmy.net/article/40379/Letter-frequency-English
 englishLetterFrequencies :: Map.Map Char Float
@@ -206,14 +206,14 @@ decodeHexXored'' string = bestDistance
     xorPossibilityStrings = map (\key -> C.unpack (encryptWithRepeatingKeyXOR key input)) keys
     keys = map B.singleton [0..255]
 
-bruteForceEnglishEncryptedWithSingleByteXOR :: CipherText -> [(PlainText, Likelihood)]
+bruteForceEnglishEncryptedWithSingleByteXOR :: CipherText -> [(PlainText, Score)]
 bruteForceEnglishEncryptedWithSingleByteXOR cipertext =
-    map likelihood . filter isPrintable . map (decrypt cipertext) $ keys
+    map score . filter isPrintable . map (decrypt cipertext) $ keys
   where
     keys :: [Key]
     keys = map B.singleton [0..255]
-    likelihood :: PlainText -> (PlainText, Likelihood)
-    likelihood _ = undefined
+    score :: PlainText -> (PlainText, Score)
+    score _ = undefined
     isPrintable :: ByteString -> Bool
     isPrintable = C.all Char.isPrint
     decrypt = flip decryptWithRepeatingKeyXOR
