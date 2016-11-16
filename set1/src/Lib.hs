@@ -107,18 +107,18 @@ frequencies input = Map.map (% totalCharacters) characterCountMap
     characterCountMap = Map.fromListWith (+) characterSingletons
     characterSingletons = map (\c -> (c, 1)) input
 
-xor :: B.ByteString -> B.ByteString -> B.ByteString
+xor :: ByteString -> ByteString -> ByteString
 xor a b = B.pack (B.zipWith Bits.xor a b)
 
-hexStringToBytes :: HexString -> Either String B.ByteString
+hexStringToBytes :: HexString -> Either String ByteString
 hexStringToBytes = base16DecodeCompletely . fromString
 
-hexStringToBytes' :: HexString -> B.ByteString
+hexStringToBytes' :: HexString -> ByteString
 hexStringToBytes' = fromRight . hexStringToBytes
 
 decodeHex = hexStringToBytes'
 
-base16DecodeCompletely :: B.ByteString -> Either String B.ByteString
+base16DecodeCompletely :: ByteString -> Either String ByteString
 base16DecodeCompletely = toMaybe . Base16.decode
   where
     toMaybe (result, leftovers)
@@ -156,6 +156,12 @@ chunks size = loop 0
       | B.null bs = []
       | otherwise = B.take size bs : loop (offset + size) (B.drop size bs)
 
+hammingDistance :: ByteString -> ByteString -> Int
+hammingDistance bs1 bs2 = popCount $ difference bs1 bs2
+  where
+    difference = xor
+    popCount = B.foldl' (\acc byte -> acc + Bits.popCount byte) 0
+
 test_set1_challenge1 = expected ~=? actual
   where
     expected = C.pack "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
@@ -185,10 +191,13 @@ test_set1_challenge5 = expected_ciphertext ~=? encryptWithRepeatingKeyXOR key pl
        "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272" ++ 
        "a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
 
+test_hammingDistance = C.pack "this is a test" `hammingDistance` C.pack "wokka wokka!!!" ~=? 37
+
 tests = TestLabel "Lib" $ TestList
   [ test_set1_challenge1
   , test_set1_challenge2
   , test_set1_challenge3
   , test_set1_challenge4
   , test_set1_challenge5
+  , test_hammingDistance
   ]
