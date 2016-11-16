@@ -143,6 +143,9 @@ bruteForceEnglishEncryptedWithSingleByteXOR cipertext =
     isPrintable = C.all ((||) <$> Char.isPrint <*> Char.isSpace)
     decrypt = flip decryptWithRepeatingKeyXOR
 
+bruteForceEnglishEncryptedWithRepeatingKeyXOR :: CiperText -> [(PlainText, Score)]
+bruteForceEnglishEncryptedWithRepeatingKeyXOR = undefined
+
 encryptWithRepeatingKeyXOR :: Key -> PlainText -> CipherText
 encryptWithRepeatingKeyXOR key = B.concat . map (`xor` key) . chunks (B.length key)
 
