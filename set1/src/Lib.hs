@@ -144,7 +144,7 @@ bruteForceEnglishEncryptedWithSingleByteXOR cipertext =
     decrypt = flip decryptWithRepeatingKeyXOR
 
 bruteForceEnglishEncryptedWithRepeatingKeyXOR :: CipherText -> [(PlainText, Score)]
-bruteForceEnglishEncryptedWithRepeatingKeyXOR = undefined
+bruteForceEnglishEncryptedWithRepeatingKeyXOR cipertext = undefined
   where
     keySizes = [2..42]
 
