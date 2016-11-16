@@ -156,6 +156,9 @@ chunks size = loop 0
       | B.null bs = []
       | otherwise = B.take size bs : loop (offset + size) (B.drop size bs)
 
+pairs :: [a] -> [(a, a)]
+pairs xs = zip xs (tail xs)
+
 hammingDistance :: ByteString -> ByteString -> Int
 hammingDistance bs1 bs2 = popCount $ difference bs1 bs2
   where
