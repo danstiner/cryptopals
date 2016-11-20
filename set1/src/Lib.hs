@@ -126,8 +126,8 @@ base16DecodeCompletely = toMaybe . Base16.decode
       | otherwise = Left ("Non-base16 input starting at byte " ++ show (B.length result * 2))
 
 bruteForceEnglishEncryptedWithSingleByteXOR :: CipherText -> [(PlainText, Score)]
-bruteForceEnglishEncryptedWithSingleByteXOR cipertext =
-    map score . filter isPrintable . map (decrypt cipertext) $ keys
+bruteForceEnglishEncryptedWithSingleByteXOR ciphertext =
+    map score . filter isPrintable . map (decrypt ciphertext) $ keys
   where
     keys :: [Key]
     keys = map B.singleton [0..255]
