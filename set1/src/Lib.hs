@@ -161,6 +161,9 @@ chunks size = loop 0
       | B.null bs = []
       | otherwise = B.take size bs : loop (offset + size) (B.drop size bs)
 
+transposedChunks :: Int -> ByteString -> [ByteString]
+transposedChunks size = B.transpose . chunks size
+
 pairs :: [a] -> [(a, a)]
 pairs xs = zip xs (tail xs)
 
