@@ -34,6 +34,7 @@ type CipherText = ByteString
 type PlainText = ByteString
 type Key = ByteString
 type Score = Float
+type KeySize = Int
 
 -- from http://en.algoritmy.net/article/40379/Letter-frequency-English
 englishLetterFrequencies :: Map.Map Char Float
