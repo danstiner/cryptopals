@@ -164,6 +164,9 @@ chunks size = loop 0
 transposedChunks :: Int -> ByteString -> [ByteString]
 transposedChunks size = B.transpose . chunks size
 
+untransposeChunks :: [ByteString] -> ByteString
+untransposeChunks = B.concat . B.transpose
+
 pairs :: [a] -> [(a, a)]
 pairs xs = zip xs (tail xs)
 
