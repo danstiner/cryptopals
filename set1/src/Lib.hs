@@ -161,6 +161,17 @@ bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext = List.sortBy (compare 
     average :: [Int] -> Ratio Int
     average xs = sum xs % length xs
 
+bruteForceEnglishEncryptedWithRepeatingKeyXORGivenSize :: CipherText -> KeySize -> [(PlainText, Score)]
+bruteForceEnglishEncryptedWithRepeatingKeyXORGivenSize ciphertext keySize =
+    combinations . map bruteForceEnglishEncryptedWithSingleByteXOR $ transposeChunks keySize ciphertext
+  where
+    combinations :: [[(PlainText, Score)]] -> [(PlainText, Score)]
+    combinations = map combine . outerProduct
+    combine :: [(PlainText, Score)] -> (PlainText, Score)
+    combine xs =
+      let chunks = map fst xs
+          scores = map snd xs in
+            (untransposeChunks chunks, sum scores)
 
 outerProduct :: [[a]] -> [[a]]
 outerProduct = sequence
