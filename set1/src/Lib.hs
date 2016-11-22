@@ -5,27 +5,28 @@ module Lib
     , tests
     ) where
 
-import Data.FileEmbed
-import qualified Data.Either as Either
-import qualified Data.List as List
-import Test.HUnit
-import Test.HUnit.Approx
-import qualified Data.ByteString.Base16 as Base16
-import qualified Data.ByteString.Base64 as Base64
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as C
-import Data.ByteString (ByteString)
-import Data.String
-import Data.Either.Unwrap
-import qualified Data.Bits as Bits
-import qualified Data.Map.Strict as Map
-import Data.Map.Strict (Map)
-import Data.Ratio
-import Control.Arrow
-import Data.Function
-import Data.Maybe
-import System.IO.Unsafe
-import Data.Char as Char
+import           Control.Arrow
+import qualified Data.Bits               as Bits
+import           Data.ByteString         (ByteString)
+import qualified Data.ByteString         as B
+import qualified Data.ByteString.Base16  as Base16
+import qualified Data.ByteString.Base64  as Base64
+import           Data.ByteString.Builder as Builder
+import qualified Data.ByteString.Char8   as C
+import           Data.Char               as Char
+import qualified Data.Either             as Either
+import           Data.Either.Unwrap
+import           Data.FileEmbed
+import           Data.Function
+import qualified Data.List               as List
+import           Data.Map.Strict         (Map)
+import qualified Data.Map.Strict         as Map
+import           Data.Maybe
+import           Data.Ratio
+import           Data.String
+import           System.IO.Unsafe
+import           Test.HUnit
+import           Test.HUnit.Approx
 
 type HexString = String
 type Base64String = String
