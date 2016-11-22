@@ -148,7 +148,7 @@ bruteForceEnglishEncryptedWithSingleByteXOR ciphertext =
 fromFrequency :: Frequency -> Score
 fromFrequency = fromRational . toRational
 
-bruteForceEnglishEncryptedWithRepeatingKeyXOR :: CipherText -> [(Key, Score, PlainText)]
+bruteForceEnglishEncryptedWithRepeatingKeyXOR :: CipherText -> [(PlainText, Key, Score)]
 bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext = List.sortBy (compare `on` snd') $ concatMap compute keySizes
   where
     keySizes = [2..42]
@@ -156,7 +156,7 @@ bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext = List.sortBy (compare 
     normalizedEditDistance keySize = (/ fromIntegral keySize) . average . map (uncurry hammingDistance) . pairs $ chunks keySize ciphertext
     compute keySize = let distance = normalizedEditDistance keySize in
                       let outcomes = bruteForceEnglishEncryptedWithRepeatingKeyXORGivenSize ciphertext keySize in
-      map (\(plaintext, key, score) -> (key, fromFrequency distance * score, plaintext)) outcomes
+      map (\(plaintext, key, score) -> (plaintext, key, fromFrequency distance * score)) outcomes
     snd' :: (a, b, c) -> b
     snd' (_, b, _) = b
     average :: [Int] -> Ratio Int
