@@ -139,10 +139,12 @@ bruteForceEnglishEncryptedWithSingleByteXOR ciphertext =
     sumMap = Map.foldl' (+) 0
     metric x1 x2 = abs (x1 - x2)
     zero = 0.0
-    fromFrequency = fromRational . toRational
     isPrintable :: ByteString -> Bool
     isPrintable = C.all ((||) <$> Char.isPrint <*> Char.isSpace)
     decrypt = flip decryptWithRepeatingKeyXOR
+
+fromFrequency :: Frequency -> Score
+fromFrequency = fromRational . toRational
 
 bruteForceEnglishEncryptedWithRepeatingKeyXOR :: CipherText -> [(PlainText, Score)]
 bruteForceEnglishEncryptedWithRepeatingKeyXOR cipertext = undefined
