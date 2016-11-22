@@ -164,10 +164,12 @@ bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext = concatMap compute key
 
 bruteForceEnglishEncryptedWithRepeatingKeyXORGivenSize :: CipherText -> KeySize -> [(PlainText, Key, Score)]
 bruteForceEnglishEncryptedWithRepeatingKeyXORGivenSize ciphertext keySize =
-    combinations . map bruteForceEnglishEncryptedWithSingleByteXOR $ transposeChunks keySize ciphertext
+    maybeToList . bestCombination . map bruteForceEnglishEncryptedWithSingleByteXOR $ transposeChunks keySize ciphertext
   where
-    combinations :: [[(PlainText, Key, Score)]] -> [(PlainText, Key, Score)]
-    combinations = map combine . outerProduct
+    bestCombination :: [[(PlainText, Key, Score)]] -> Maybe (PlainText, Key, Score)
+    bestCombination xs
+      | null xs || any null xs = Nothing
+      | otherwise = Just . combine . map (List.minimumBy (compare `on` third)) $ xs
     combine :: [(PlainText, Key, Score)] -> (PlainText, Key, Score)
     combine xs =
       let chunks = map first xs
@@ -266,12 +268,26 @@ test_set1_challenge5 = expected_ciphertext ~=? encryptWithRepeatingKeyXOR key pl
        "a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
 
 
+test_set1_challenge6 = plaintext ~=? first (List.minimumBy (compare `on` third) decoded)
+  where
+    decoded :: [(PlainText, Key, Score)]
+    decoded = bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext
+    ciphertext = Base64.decodeLenient $ $(embedStringFile "data/6.txt")
+    plaintext = $(embedFile "data/6.decoded.txt")
+    first :: (a, b, c) -> a
+    first (a, _, _) = a
+    second :: (a, b, c) -> b
+    second (_, b, _) = b
+    third :: (a, b, c) -> c
+    third (_, _, c) = c
+
 tests = TestLabel "Lib" $ TestList
   [ test_set1_challenge1
   , test_set1_challenge2
   , test_set1_challenge3
   , test_set1_challenge4
   , test_set1_challenge5
+  , test_set1_challenge6
   , test_hammingDistance
   , test_outerProduct
   , test_chunks_notEvenlyDivisible
