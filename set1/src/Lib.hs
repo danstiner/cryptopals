@@ -181,7 +181,6 @@ bruteForceEnglishEncryptedWithRepeatingKeyXORGivenSize ciphertext keySize =
     third :: (a, b, c) -> c
     third (_, _, c) = c
 
-
 outerProduct :: [[a]] -> [[a]]
 outerProduct = sequence
 
