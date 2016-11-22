@@ -151,7 +151,7 @@ fromFrequency = fromRational . toRational
 bruteForceEnglishEncryptedWithRepeatingKeyXOR :: CipherText -> [(PlainText, Key, Score)]
 bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext = concatMap compute keySizes
   where
-    keySizes = [2..42]
+    keySizes = filter (< B.length ciphertext) [1..42]
     normalizedEditDistance :: Int -> Ratio Int
     normalizedEditDistance keySize = (/ fromIntegral keySize) . average . map (uncurry hammingDistance) . pairs $ chunks keySize ciphertext
     compute keySize = let distance = normalizedEditDistance keySize in
