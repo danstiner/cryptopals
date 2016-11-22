@@ -183,8 +183,8 @@ chunks size = loop 0
       | B.null bs = []
       | otherwise = B.take size bs : loop (offset + size) (B.drop size bs)
 
-transposedChunks :: Int -> ByteString -> [ByteString]
-transposedChunks size = B.transpose . chunks size
+transposeChunks :: Int -> ByteString -> [ByteString]
+transposeChunks size = B.transpose . chunks size
 
 untransposeChunks :: [ByteString] -> ByteString
 untransposeChunks = B.concat . B.transpose
