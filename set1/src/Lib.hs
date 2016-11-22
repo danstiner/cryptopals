@@ -202,6 +202,10 @@ chunks size = loop 0
       | B.null bs = []
       | otherwise = B.take size bs : loop (offset + size) (B.drop size bs)
 
+test_chunks_notEvenlyDivisible = [C.pack "AB", C.pack "C"] ~=? chunks 2 (C.pack "ABC")
+
+test_chunks_singleton = [C.pack "A"] ~=? chunks 1 (C.pack "A")
+
 transposeChunks :: Int -> ByteString -> [ByteString]
 transposeChunks size = B.transpose . chunks size
 
@@ -270,4 +274,6 @@ tests = TestLabel "Lib" $ TestList
   , test_set1_challenge5
   , test_hammingDistance
   , test_outerProduct
+  , test_chunks_notEvenlyDivisible
+  , test_chunks_singleton
   ]
