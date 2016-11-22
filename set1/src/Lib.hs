@@ -149,7 +149,7 @@ fromFrequency :: Frequency -> Score
 fromFrequency = fromRational . toRational
 
 bruteForceEnglishEncryptedWithRepeatingKeyXOR :: CipherText -> [(PlainText, Key, Score)]
-bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext = List.sortBy (compare `on` snd') $ concatMap compute keySizes
+bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext = concatMap compute keySizes
   where
     keySizes = [2..42]
     normalizedEditDistance :: Int -> Ratio Int
