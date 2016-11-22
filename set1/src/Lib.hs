@@ -151,6 +151,14 @@ bruteForceEnglishEncryptedWithRepeatingKeyXOR cipertext = undefined
   where
     keySizes = [2..42]
 
+outerProduct :: [[a]] -> [[a]]
+outerProduct = sequence
+
+test_outerProduct = [
+  ["a1", "b1"], ["a1", "b2"], ["a1", "b3"],
+  ["a2", "b1"], ["a2", "b2"], ["a2", "b3"],
+  ["a3", "b1"], ["a3", "b2"], ["a3", "b3"]] ~=? outerProduct [["a1", "a2", "a3"], ["b1", "b2", "b3"]]
+
 encryptWithRepeatingKeyXOR :: Key -> PlainText -> CipherText
 encryptWithRepeatingKeyXOR key = B.concat . map (`xor` key) . chunks (B.length key)
 
@@ -217,4 +225,5 @@ tests = TestLabel "Lib" $ TestList
   , test_set1_challenge4
   , test_set1_challenge5
   , test_hammingDistance
+  , test_outerProduct
   ]
