@@ -1,2 +1,6 @@
+# 2016-11-22
+ - Completed challenge 6, brute force now uses most likely value for each byte of the key
+ - Should introduce a type for brute force result instead of using 3-tuples everywhere
+
 # 2016-11-21
  - Calculating all possible keys as is being done now is on the order of ```256^keyBytes```, this is impractical. Instead the brute force function will have to only use the most likely value for each byte.
