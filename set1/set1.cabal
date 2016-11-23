@@ -21,6 +21,7 @@ library
                      , base64-bytestring
                      , bytestring
                      , containers
+                     , cryptonite
                      , either-unwrap
                      , file-embed
                      , HUnit

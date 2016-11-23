@@ -7,6 +7,9 @@ module Lib
 
 import           Control.Arrow
 import           Control.Lens
+import           Crypto.Cipher.AES       (AES128)
+import           Crypto.Cipher.Types     (BlockCipher (..), Cipher (..))
+import           Crypto.Error            (CryptoFailable (..), throwCryptoError)
 import qualified Data.Bits               as Bits
 import           Data.ByteString         (ByteString)
 import qualified Data.ByteString         as B
@@ -254,8 +257,15 @@ test_set1_challenge6 = expected ~=? _plaintext (List.minimumBy (compare `on` _sc
   where
     guesses :: [BruteForceGuess]
     guesses = bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext
-    ciphertext = Base64.decodeLenient $ $(embedStringFile "data/6.txt")
+    ciphertext = Base64.decodeLenient $(embedStringFile "data/6.txt")
     expected = $(embedFile "data/6.decoded.txt")
+
+test_set1_challenge7 = $(embedFile "data/7.decoded.txt") ~=? ecbDecrypt cipher ciphertext
+  where
+    ciphertext = Base64.decodeLenient $(embedStringFile "data/7.txt")
+    cipher :: AES128
+    cipher = throwCryptoError $ cipherInit key
+    key = C.pack "YELLOW SUBMARINE"
 
 tests = TestLabel "Lib" $ TestList
   [ test_set1_challenge1
@@ -265,6 +275,7 @@ tests = TestLabel "Lib" $ TestList
   , test_set1_challenge4
   , test_set1_challenge5
   , test_set1_challenge6
+  , test_set1_challenge7
   , test_hammingDistance
   , test_chunks_notEvenlyDivisible
   , test_chunks_singleton
