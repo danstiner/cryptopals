@@ -269,6 +269,14 @@ test_set1_challenge7 = $(embedFile "data/7.decoded.txt") ~=? ecbDecrypt cipher c
     cipher = throwCryptoError $ cipherInit key
     key = C.pack "YELLOW SUBMARINE"
 
+test_set1_challenge8 = [133] ~=? map fst (filter (isECB . snd) numberedCiphertextLines)
+  where
+    numberedCiphertextLines = zip [1..] ciphertextLines
+    ciphertextLines = map decodeHex $ lines $(embedStringFile "data/8.txt")
+    isECB = hasDuplicates . chunks 16
+    hasDuplicates :: Eq a => [a] -> Bool
+    hasDuplicates xs = xs /= List.nub xs
+
 tests = TestLabel "Lib" $ TestList
   [ test_set1_challenge1
   , test_set1_challenge2
@@ -278,6 +286,7 @@ tests = TestLabel "Lib" $ TestList
   , test_set1_challenge5
   , test_set1_challenge6
   , test_set1_challenge7
+  , test_set1_challenge8
   , test_hammingDistance
   , test_chunks_notEvenlyDivisible
   , test_chunks_singleton
