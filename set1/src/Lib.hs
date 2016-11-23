@@ -146,16 +146,18 @@ bruteForceEnglishEncryptedWithSingleByteXOR ciphertext =
     keys :: [Key]
     keys = map B.singleton [0..255]
     score :: (PlainText, Key) -> BruteForceGuess
-    score (text, key) = BruteForceGuess text key (score' text)
-    score' text = distance englishLetterFrequencies (Map.map fromFrequency (frequencies (C.unpack text)))
-    distance expected actual = sumMap $ distanceFromExpected metric zero expected actual
-    sumMap = Map.foldl' (+) 0
-    metric x1 x2 = abs (x1 - x2)
-    zero = 0.0
+    score (text, key) = BruteForceGuess text key (scoreTextAsEnglish text)
     isPrintable :: ByteString -> Bool
     isPrintable = C.all ((||) <$> Char.isPrint <*> Char.isSpace)
     decrypt :: CipherText -> Key -> (PlainText, Key)
     decrypt ciphertext key = (decryptWithRepeatingKeyXOR key ciphertext, key)
+
+scoreTextAsEnglish text = distance englishLetterFrequencies (Map.map fromFrequency (frequencies (C.unpack text)))
+  where
+    distance expected actual = sumMap $ distanceFromExpected metric zero expected actual
+    sumMap = Map.foldl' (+) 0
+    metric x1 x2 = abs (x1 - x2)
+    zero = 0.0
 
 fromFrequency :: Frequency -> Score
 fromFrequency = fromRational . toRational
