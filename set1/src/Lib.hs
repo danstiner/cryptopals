@@ -37,6 +37,12 @@ type Key = ByteString
 type Score = Float
 type KeySize = Int
 
+data BruteForceGuess = BruteForceGuess
+  { plaintext :: PlainText
+  , key       :: Key
+  , score     :: Score
+  }
+
 -- from http://en.algoritmy.net/article/40379/Letter-frequency-English
 englishLetterFrequencies :: Map.Map Char Float
 englishLetterFrequencies = Map.fromList
@@ -127,14 +133,14 @@ base16DecodeCompletely = toMaybe . Base16.decode
       | B.null leftovers = Right result
       | otherwise = Left ("Non-base16 input starting at character " ++ show (B.length result * 2))
 
-bruteForceEnglishEncryptedWithSingleByteXOR :: CipherText -> [(PlainText, Key, Score)]
+bruteForceEnglishEncryptedWithSingleByteXOR :: CipherText -> [BruteForceGuess]
 bruteForceEnglishEncryptedWithSingleByteXOR ciphertext =
     map score . filter (isPrintable . fst) . map (decrypt ciphertext) $ keys
   where
     keys :: [Key]
     keys = map B.singleton [0..255]
-    score :: (PlainText, Key) -> (PlainText, Key, Score)
-    score (text, key) = (text, key, score' text)
+    score :: (PlainText, Key) -> BruteForceGuess
+    score (text, key) = BruteForceGuess text key (score' text)
     score' text = distance englishLetterFrequencies (Map.map fromFrequency (frequencies (C.unpack text)))
     distance expected actual = sumMap $ distanceFromExpected metric zero expected actual
     sumMap = Map.foldl' (+) 0
@@ -148,7 +154,7 @@ bruteForceEnglishEncryptedWithSingleByteXOR ciphertext =
 fromFrequency :: Frequency -> Score
 fromFrequency = fromRational . toRational
 
-bruteForceEnglishEncryptedWithRepeatingKeyXOR :: CipherText -> [(PlainText, Key, Score)]
+bruteForceEnglishEncryptedWithRepeatingKeyXOR :: CipherText -> [BruteForceGuess]
 bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext = concatMap compute keySizes
   where
     keySizes = filter (< B.length ciphertext) [1..42]
@@ -156,32 +162,26 @@ bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext = concatMap compute key
     normalizedEditDistance keySize = (/ fromIntegral keySize) . average . map (uncurry hammingDistance) . pairs $ chunks keySize ciphertext
     compute keySize = let distance = normalizedEditDistance keySize in
                       let outcomes = bruteForceEnglishEncryptedWithRepeatingKeyXORGivenSize ciphertext keySize in
-      map (\(plaintext, key, score) -> (plaintext, key, fromFrequency distance * score)) outcomes
+      map (\(BruteForceGuess plaintext key score) -> BruteForceGuess plaintext key (fromFrequency distance * score)) outcomes
     snd' :: (a, b, c) -> b
     snd' (_, b, _) = b
     average :: [Int] -> Ratio Int
     average xs = sum xs % length xs
 
-bruteForceEnglishEncryptedWithRepeatingKeyXORGivenSize :: CipherText -> KeySize -> [(PlainText, Key, Score)]
+bruteForceEnglishEncryptedWithRepeatingKeyXORGivenSize :: CipherText -> KeySize -> [BruteForceGuess]
 bruteForceEnglishEncryptedWithRepeatingKeyXORGivenSize ciphertext keySize =
     maybeToList . bestCombination . map bruteForceEnglishEncryptedWithSingleByteXOR $ transposeChunks keySize ciphertext
   where
-    bestCombination :: [[(PlainText, Key, Score)]] -> Maybe (PlainText, Key, Score)
+    bestCombination :: [[BruteForceGuess]] -> Maybe BruteForceGuess
     bestCombination xs
       | null xs || any null xs = Nothing
-      | otherwise = Just . combine . map (List.minimumBy (compare `on` third)) $ xs
-    combine :: [(PlainText, Key, Score)] -> (PlainText, Key, Score)
+      | otherwise = Just . combine . map (List.minimumBy (compare `on` score)) $ xs
+    combine :: [BruteForceGuess] -> BruteForceGuess
     combine xs =
-      let chunks = map first xs
-          keyParts = map second xs
-          scores = map third xs in
-            (untransposeChunks chunks, B.concat keyParts, sum scores)
-    first :: (a, b, c) -> a
-    first (a, _, _) = a
-    second :: (a, b, c) -> b
-    second (_, b, _) = b
-    third :: (a, b, c) -> c
-    third (_, _, c) = c
+      let chunks = map plaintext xs
+          keyParts = map key xs
+          scores = map score xs in
+            BruteForceGuess (untransposeChunks chunks) (B.concat keyParts) (sum scores)
 
 outerProduct :: [[a]] -> [[a]]
 outerProduct = sequence
@@ -236,26 +236,13 @@ test_set1_challenge2 = expected ~=? actual
     actual = decodeHex "1c0111001f010100061a024b53535009181c" `xor` decodeHex "686974207468652062756c6c277320657965"
 
 test_set1_challenge3 =
-    C.pack "Cooking MC's like a pound of bacon" ~=? first (List.minimumBy (compare `on` third) $ bruteForceEnglishEncryptedWithSingleByteXOR (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"))
-  where
-    first :: (a, b, c) -> a
-    first (a, _, _) = a
-    second :: (a, b, c) -> b
-    second (_, b, _) = b
-    third :: (a, b, c) -> c
-    third (_, _, c) = c
+    C.pack "Cooking MC's like a pound of bacon" ~=? plaintext (List.minimumBy (compare `on` score) $ bruteForceEnglishEncryptedWithSingleByteXOR (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"))
 
-test_set1_challenge4 = C.pack "Now that the party is jumping\n" ~=? first (List.minimumBy (compare `on` third) decodedLines)
+test_set1_challenge4 = C.pack "Now that the party is jumping\n" ~=? plaintext (List.minimumBy (compare `on` score) decodedLines)
   where
-    decodedLines :: [(PlainText, Key, Score)]
-    decodedLines = concatMap (bruteForceEnglishEncryptedWithSingleByteXOR . decodeHex) testLines
-    testLines = lines $(embedStringFile "data/4.txt")
-    first :: (a, b, c) -> a
-    first (a, _, _) = a
-    second :: (a, b, c) -> b
-    second (_, b, _) = b
-    third :: (a, b, c) -> c
-    third (_, _, c) = c
+    decodedLines :: [BruteForceGuess]
+    decodedLines = concatMap (bruteForceEnglishEncryptedWithSingleByteXOR . decodeHex) cipertextLines
+    cipertextLines = lines $(embedStringFile "data/4.txt")
 
 test_set1_challenge5 = expected_ciphertext ~=? encryptWithRepeatingKeyXOR key plaintext
   where
@@ -268,27 +255,14 @@ test_set1_challenge5 = expected_ciphertext ~=? encryptWithRepeatingKeyXOR key pl
        "a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
 
 test_set1_challenge3' =
-    C.pack "Cooking MC's like a pound of bacon" ~=? first (List.minimumBy (compare `on` third) $ bruteForceEnglishEncryptedWithRepeatingKeyXOR (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"))
-  where
-    first :: (a, b, c) -> a
-    first (a, _, _) = a
-    second :: (a, b, c) -> b
-    second (_, b, _) = b
-    third :: (a, b, c) -> c
-    third (_, _, c) = c
+    C.pack "Cooking MC's like a pound of bacon" ~=? plaintext (List.minimumBy (compare `on` score) $ bruteForceEnglishEncryptedWithRepeatingKeyXOR (decodeHex "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"))
 
-test_set1_challenge6 = plaintext ~=? first (List.minimumBy (compare `on` third) decoded)
+test_set1_challenge6 = expected ~=? plaintext (List.minimumBy (compare `on` score) guesses)
   where
-    decoded :: [(PlainText, Key, Score)]
-    decoded = bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext
+    guesses :: [BruteForceGuess]
+    guesses = bruteForceEnglishEncryptedWithRepeatingKeyXOR ciphertext
     ciphertext = Base64.decodeLenient $ $(embedStringFile "data/6.txt")
-    plaintext = $(embedFile "data/6.decoded.txt")
-    first :: (a, b, c) -> a
-    first (a, _, _) = a
-    second :: (a, b, c) -> b
-    second (_, b, _) = b
-    third :: (a, b, c) -> c
-    third (_, _, c) = c
+    expected = $(embedFile "data/6.decoded.txt")
 
 tests = TestLabel "Lib" $ TestList
   [ test_set1_challenge1
